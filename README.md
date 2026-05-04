@@ -18,15 +18,8 @@
 ```text
 alice_claim_free_traffic.py      主脚本
 alice_config.example.json        配置模板
+alice_token.json                 运行后自动生成的登录缓存
 ```
-
-运行后会生成：
-
-```text
-alice_token.json                 登录 token 缓存
-```
-
-请不要提交真实的 `alice_config.json` 或 `alice_token.json`。
 
 ## 配置
 
@@ -92,10 +85,54 @@ Claim failed: ALL 每 50GB Traffic Package (50.00 GB), id=3, message=monthly pur
 0 * * * * cd /path/to/alice-free-traffic-claimer && /usr/bin/python3 alice_claim_free_traffic.py >> alice_claim.log 2>&1
 ```
 
+这条任务的意思是：
+
+```text
+0 * * * *     每小时的第 0 分钟执行一次
+cd ...        进入脚本所在目录
+python3 ...   运行脚本
+>> ...        把输出追加写入 alice_claim.log
+2>&1          把错误信息也写入同一个日志文件
+```
+
+它不会一直常驻后台。cron 到时间启动一次脚本，脚本运行完就退出，下一小时再启动一次。
+
 更接近到期后立即领取，可以每 10 分钟执行一次：
 
 ```cron
 */10 * * * * cd /path/to/alice-free-traffic-claimer && /usr/bin/python3 alice_claim_free_traffic.py >> alice_claim.log 2>&1
+```
+
+查看当前定时任务：
+
+```bash
+crontab -l
+```
+
+编辑定时任务：
+
+```bash
+crontab -e
+```
+
+取消自动领取：执行 `crontab -e`，删除对应这一行，然后保存退出。
+
+也可以临时禁用，在行首加 `#`：
+
+```cron
+# 0 * * * * cd /path/to/alice-free-traffic-claimer && /usr/bin/python3 alice_claim_free_traffic.py >> alice_claim.log 2>&1
+```
+
+查看最近日志：
+
+```bash
+tail -n 50 alice_claim.log
+```
+
+清空日志：
+
+```bash
+> alice_claim.log
 ```
 
 ## 参数
@@ -116,4 +153,3 @@ Claim failed: ALL 每 50GB Traffic Package (50.00 GB), id=3, message=monthly pur
 - 账号开启 2FA、验证码或触发风控时，账号密码登录接口可能失败。
 - 本项目不会绕过验证码或风控，只调用 Alice 控制台前端使用的公开接口。
 - 请遵守 Alice Networks 的服务条款和使用规则。
-- `alice_config.json` 和 `alice_token.json` 都包含敏感信息，不要上传到公开仓库。
